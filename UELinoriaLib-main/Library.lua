@@ -53,6 +53,7 @@ local Library = {
 
     Toggled = false;
     WireframeDrag = false;
+    Locked = false;
     UseBlur = false;
     BlurSize = 15;
 
@@ -232,6 +233,10 @@ end;
 function Library:MakeDraggable(Instance, Cutoff, IsWindow)
     Instance.Active = true;
     Instance.InputBegan:Connect(function(Input)
+        if Library.Locked then
+            return
+        end
+
         if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
             local StartPos = Instance.Position
             local DragStart = Input.Position
@@ -3845,9 +3850,14 @@ if InputService.TouchEnabled then
     end
 
     local ToggleOuter, ToggleBtn = CreateMobileButton("Toggle", "Toggle UI",  UDim2.new(0, 10, 0, 10))
-    local LockOuter,   LockBtn  = CreateMobileButton("Lock",   "Unlock UI",  UDim2.new(0, 10, 0, 10 + BTN_H + (BTN_GAP - BTN_H)))
+    local LockOuter,   LockBtn  = CreateMobileButton("Lock",   "Lock UI",  UDim2.new(0, 10, 0, 10 + BTN_H + (BTN_GAP - BTN_H)))
 
-    local IsUnlocked = false
+    local IsLocked = false
+
+    local function UpdateLockButton()
+        LockBtn.Text = Library.Locked and "Unlock UI" or "Lock UI"
+        LockBtn.TextColor3 = Library.Locked and Library.AccentColor or Color3.fromRGB(255, 255, 255)
+    end
 
     local function BindMobileButtonAction(Btn, Outer, ClickAction)
         local dragging  = false
@@ -3899,12 +3909,11 @@ if InputService.TouchEnabled then
     end)
 
     BindMobileButtonAction(LockBtn, LockOuter, function()
-        IsUnlocked = not IsUnlocked
-        LockBtn.Text = IsUnlocked and "Lock UI" or "Unlock UI"
-        LockBtn.TextColor3 = IsUnlocked
-            and Library.AccentColor
-            or  Color3.fromRGB(255, 255, 255)
+        Library.Locked = not Library.Locked
+        UpdateLockButton()
     end)
+
+    UpdateLockButton()
 
     local _origUpdate = Library.UpdateColorsUsingRegistry
     Library.UpdateColorsUsingRegistry = function(self)
